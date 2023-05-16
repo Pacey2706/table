@@ -1,13 +1,29 @@
-const API_key = "Fd_GrT3h7zvk7al--3AzSA6fYf4";
-const API_url = "https://ci-jshint.herokuapp.com/api";
+const API_KEY = "VZn-Fx2ohpPGHAs_RhP_m6IgxYA";
+const API_URL = "https://ci-jshint.herokuapp.com/api";
 const resultsModal = new bootstrap.Modal(document.getElementById("resultsModal"));
 
 document.getElementById("status").addEventListener("click", e => getStatus(e));
 document.getElementById("submit").addEventListener("click", e => postForm(e));
 
+function processOptions(form) {
+    let optArray = [];
+
+    for (let e of form.entries()) {
+        if (e[0] === "options") {
+            optArray.push(e[1]);
+        }
+    }
+
+    form.delete("options");
+
+    form.append("options", optArray.join());
+
+    return form;
+}
+
 async function postForm(e) {
 
-    const form = new FormData(document.getElementById("checksform"));
+    const form = processOptions(new FormData(document.getElementById("checksform")));
 
     const response = await fetch(API_URL, {
         method: "POST",
@@ -22,14 +38,15 @@ async function postForm(e) {
     if (response.ok) {
         displayErrors(data);
     } else {
+        displayException(data);
         throw new Error(data.error);
     }
 
 }
 
-
 async function getStatus(e) {
-    const queryString = `${API_url}?api_key=${API_key}`;
+
+    const queryString = `${API_URL}?api_key=${API_KEY}`;
 
     const response = await fetch(queryString);
 
@@ -38,9 +55,24 @@ async function getStatus(e) {
     if (response.ok) {
         displayStatus(data);
     } else {
+        displayException(data);
         throw new Error(data.error);
     }
-};
+
+}
+
+function displayException(data) {
+
+    let heading = `<div class="error-heading">An Exception Occurred</div>`;
+
+    results = `<div>The API returned status code ${data.status_code}</div>`;
+    results += `<div>Error number: <strong>${data.error_no}</strong></div>`;
+    results += `<div>Error text: <strong>${data.error}</strong></div>`;
+
+    document.getElementById("resultsModalTitle").innerText = heading;
+    document.getElementById("results-content").innerHTML = results;
+    resultsModal.show();
+}
 
 function displayErrors(data) {
 
@@ -64,8 +96,13 @@ function displayErrors(data) {
 }
 
 function displayStatus(data) {
-    document.getElementById("resultsModalTitle").innerText = "API Key Status";
-    document.getElementById("results-content").innerText = `Your key is valid until: ${data.expiry}`;
 
+    let heading = "API Key Status";
+    let results = `<div>Your key is valid until</div>`;
+    results += `<div class="key-status">${data.expiry}</div>`;
+
+    document.getElementById("resultsModalTitle").innerText = heading;
+    document.getElementById("results-content").innerHTML = results;
     resultsModal.show();
+
 }
